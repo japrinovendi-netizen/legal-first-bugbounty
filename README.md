@@ -62,6 +62,8 @@ it refuses regardless of that flag if any condition above is unmet.
 ## Usage
 
 ```bash
+pip install -r requirements.txt
+
 # Check whether a host is authorized (fail-closed):
 python3 tools/engagement_guard.py check target.example.com
 
@@ -73,11 +75,15 @@ To onboard a new target: copy `engagements/_template.yaml`, have a person verify
 and scope fields, and only then — as a human decision — set `decision.go_no_go: go` and
 `gate.authorized: true`. The guard refuses anything less.
 
+See [`examples/`](examples/) for a runnable walkthrough that shows the guard **blocking** a
+target even when someone has already flipped `gate.authorized: true` in the file — because the
+flag is only intent, and the guard enforces the rest.
+
 ## Notes
 
 - The in-code documentation and agent prompts are written in **Indonesian**; this README
   summarizes them in English.
-- Requires Python 3 and `pyyaml`.
+- Requires Python 3; install dependencies with `pip install -r requirements.txt`.
 
 ## Responsible use
 
