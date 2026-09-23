@@ -1,0 +1,70 @@
+# ============================================================================
+# CONTOH / EXAMPLE ENGAGEMENT — untuk demonstrasi saja.
+# Target `demo.example.com` adalah domain contoh (RFC 2606, TIDAK nyata).
+#
+# File ini SENGAJA menunjukkan poin utama guard:
+#   walau `gate.authorized: true` sudah diisi, guard TETAP MEMBLOKIR
+#   karena `decision.go_no_go` masih `pending` dan `program.status` masih `draft`.
+#   Flag di file cuma NIAT; guard yang menegakkan (fail-closed).
+#
+# Coba: salin ke ../engagements/ lalu jalankan
+#   python3 tools/engagement_guard.py check demo.example.com
+# Lihat examples/README.md untuk output nyatanya.
+# ============================================================================
+
+schema_version: 1
+
+platform:
+  name: "Direct/Private (contoh)"
+  base_url: "https://demo.example.com"
+  operator_legal_entity: "Contoh Corp"
+
+program:
+  name: "Demo Program (CONTOH — bukan target nyata)"
+  slug: "demo"
+  program_url: "https://demo.example.com/security"
+  status: draft            # <-- masih draft, bukan active
+
+decision:
+  go_no_go: pending         # <-- belum ada keputusan manusia
+  decided_by: null
+  decided_at: null
+  reason: null
+
+gate:
+  legal:
+    written_authorization:
+      present: unknown
+      source: null
+    safe_harbor:
+      present: unknown
+      text_excerpt: null
+      verified_at: null
+      verification_method: null
+    documents: []
+    overall_legal_risk: unknown
+
+  scope:
+    in_scope:
+      - "demo.example.com"
+    out_of_scope: []
+    exclusions: []
+    dangerous_actions_require_extra_care:
+      - "apa pun yang menyentuh akun/data pihak ketiga"
+    rate_policy: "single-shot probes only, no automated scanner/flood"
+
+  authorized: true
+  # ^ Sengaja true untuk demonstrasi: guard TETAP menolak karena syarat lain
+  #   (go_no_go=go, status=active, written_authorization.present=true) belum terpenuhi.
+
+accounts:
+  test_accounts: []
+
+reporting:
+  channel: null
+  disclosure_policy: null
+  contact: null
+
+history:
+  - date: "2026-01-01"
+    event: "File contoh dibuat untuk demonstrasi guard (bukan engagement nyata)."
