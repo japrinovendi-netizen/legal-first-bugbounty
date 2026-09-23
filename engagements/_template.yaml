@@ -1,0 +1,107 @@
+# ============================================================================
+# TEMPLATE UNIVERSAL — engagement.yaml
+# ============================================================================
+# Satu file = satu program/target bug bounty, di platform APAPUN
+# (HackerOne, Bugcrowd, Intigriti, YesWeHack, direct/private VDP, dll).
+#
+# CARA PAKAI:
+#   1. Copy file ini -> engagements/<nama-program>.yaml
+#   2. Isi semua field. Field yang tidak relevan boleh diisi `null` + catatan.
+#   3. JANGAN isi `authorized: true` sampai seluruh checklist gate.legal
+#      dan gate.scope benar-benar diverifikasi dan dikonfirmasi MANUSIA
+#      (bukan agent) — lihat aturan di tools/engagement_guard.py.
+#   4. Semua tool (cdp_capture, cdp_probe, idor_analyzer, dst) WAJIB import
+#      engagement_guard dan cek is_authorized() sebelum mengirim request
+#      apapun ke host yang bukan milik operator tool ini sendiri.
+#
+# Prinsip dasar (tidak bisa ditawar, berlaku lintas platform):
+#   - Authorization-before-testing. NDA != izin uji.
+#   - Legal gate mendahului technical gate.
+#   - Minimal impact, minimal data.
+#   - Jejak dapat dipertanggungjawabkan (activity ledger).
+#   - Berhenti saat ragu.
+# ============================================================================
+
+schema_version: 1
+
+# --- Identitas platform & program -------------------------------------------
+platform:
+  name: null              # mis. "HackerOne", "Bugcrowd", "Direct/Private"
+  base_url: null          # mis. "https://target.example.com"
+  operator_legal_entity: null   # badan hukum di balik platform, mis. "PT Contoh Keamanan"
+
+program:
+  name: null              # nama program, mis. "Bug Bounty Web App (Program X)"
+  slug: null               # id/slug program di platform
+  program_url: null
+  status: draft            # draft | active | paused | halted | completed
+
+# --- Keputusan GO/NO-GO (WAJIB diisi manusia, bukan agent) ------------------
+decision:
+  go_no_go: pending         # pending | go | no-go
+  decided_by: null          # nama manusia yang memutuskan (bukan "Claude"/nama agent)
+  decided_at: null          # tanggal ISO, mis. "2025-01-15"
+  reason: null              # ringkasan alasan keputusan
+
+# ============================================================================
+# GATE-0 & GATE-1 — Legal & Otorisasi + Scope
+# (Lihat README untuk ringkasan metodologi)
+# ============================================================================
+gate:
+  legal:
+    written_authorization:
+      present: unknown          # true | false | unknown
+      source: null               # mis. "public program page mendefinisikan scope" |
+                                  #      "RoE terpisah ditandatangani tgl X" | "tidak ada"
+    safe_harbor:
+      present: unknown           # true | false | unknown
+      text_excerpt: null         # kutip kalimat persisnya kalau ada
+      verified_at: null
+      verification_method: null  # mis. "full-text scan halaman program, keyword: safe harbor/good faith/legal action"
+    documents:
+      # ulangi blok ini per dokumen legal yang relevan (NDA, ToS, RoE, dst)
+      - type: null              # NDA | ToS | RoE | Program Policy | Other
+        local_path: null
+        status: null            # unsigned | signed | reviewed | not_applicable
+        reviewed_at: null
+        risky_clauses:          # daftar klausul berat, kalau ada
+          - clause: null
+            issue: null
+            severity: null       # low | medium | high
+    overall_legal_risk: unknown  # low | medium | high | unknown
+
+  scope:
+    in_scope: []                 # daftar host/aset yang boleh diuji
+    out_of_scope: []
+    exclusions: []                # teknik/finding yang dikecualikan, quote apa adanya dari program
+    dangerous_actions_require_extra_care:   # method destruktif, payment, data user lain, dll
+      - "DELETE/PUT ke endpoint produksi"
+      - "apa pun yang menyentuh akun/data milik pihak ketiga"
+    rate_policy: "single-shot probes only, no automated scanner/flood"  # override per-program bila beda
+
+  authorized: false
+  # ^ FLAG UTAMA yang dicek tooling. Hanya boleh true bila:
+  #   - legal.written_authorization.present == true, DAN
+  #   - decision.go_no_go == "go", DAN
+  #   - scope.in_scope tidak kosong
+  # engagement_guard.py akan menolak (fail-closed) bila salah satu syarat di atas tidak terpenuhi,
+  # TERLEPAS dari nilai authorized di file ini — field ini cuma niat, guard yang menegakkan.
+
+# --- Akun uji (GATE-2) -------------------------------------------------------
+accounts:
+  test_accounts: []
+    # - label: "Account-A"
+    #   identity_note: "akun asli milik peneliti"
+    # - label: "Account-B"
+    #   identity_note: "akun disposable, dibuat khusus utk uji cross-account"
+
+# --- Kanal pelaporan (GATE-6) ------------------------------------------------
+reporting:
+  channel: null              # mis. "fitur Send Report di platform", "email security@..."
+  disclosure_policy: null    # coordinated | public | specific-information | unknown
+  contact: null
+
+# --- Riwayat (jejak audit) ----------------------------------------------------
+history: []
+  # - date: "2025-01-15"
+  #   event: "Engagement dibuat, GATE-0 belum lulus"

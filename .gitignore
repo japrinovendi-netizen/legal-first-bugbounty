@@ -1,0 +1,41 @@
+# Defensive .gitignore — never commit engagement data or secrets to this public repo.
+
+# Any filled engagement file (only the template is public)
+engagements/*.yaml
+!engagements/_template.yaml
+
+# Captured data, reports, databases, flows
+data/
+captures/
+*.db
+*.jsonl
+
+# Legal / confidential documents
+*.pdf
+NDA*
+*NDA*
+
+# Credentials & auth
+*.dashboard_auth
+.dashboard_auth
+*.pem
+*.key
+.env
+secrets*
+
+# Logs
+*.log
+
+# Active testing tools kept private (only the guard is public)
+tools/cdp_*.py
+tools/idor_*.py
+
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# OS / editor
+.DS_Store
+*.swp
+*:Zone.Identifier
