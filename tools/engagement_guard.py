@@ -75,7 +75,12 @@ def _host_matches_scope(host: str, scope_list) -> bool:
             entry_host = urlparse(entry).netloc.lower()
         else:
             entry_host = entry.lower().rstrip("/")
-        if entry_host == host or host.endswith("." + entry_host) or entry_host.endswith("." + host):
+        # Sebuah entri scope mengotorisasi DIRINYA SENDIRI dan SUB-DOMAIN di bawahnya,
+        # TAPI TIDAK PERNAH domain induk/apex di atasnya. Contoh: in_scope "app.target.com"
+        # mengizinkan "app.target.com" dan "api.app.target.com", tapi harus MEMBLOKIR
+        # "target.com" (apex sering justru out-of-scope) dan apalagi "com" (TLD).
+        # Fail-closed: scope hanya boleh menyempit ke bawah, tidak melebar ke atas.
+        if entry_host == host or host.endswith("." + entry_host):
             return True
     return False
 
