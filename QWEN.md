@@ -31,6 +31,15 @@ datang dari file `engagements/*.yaml` yang diisi **manusia** (bukan asumsi agent
 dengan `program.status: active`, `decision.go_no_go: go`, `gate.authorized: true`,
 `gate.legal.written_authorization.present: true`, dan host cocok `gate.scope.in_scope`.
 
+## Disiplin eksekusi — satu tugas, lalu BERHENTI
+
+Kerjakan **TEPAT SATU** tugas yang diminta, lalu **BERHENTI** dan laporkan hasilnya.
+Jangan merantai tindakan lanjutan dan jangan mengeksplorasi/menjalankan apa pun di
+luar permintaan eksplisit. Jika sebuah langkah tambahan tampak perlu, **tanyakan
+lebih dulu** dan tunggu instruksi — jangan berinisiatif sendiri. Rem teknisnya sudah
+dipasang di `~/.qwen/settings.json` (`maxSessionTurns` dibatasi dan
+`tools.approvalMode: default`); jangan mencoba melewatinya.
+
 ## Yang TIDAK boleh
 
 - **Jangan** mengeksekusi recon/scan/exploit ke host sebelum gate di atas lulus.
