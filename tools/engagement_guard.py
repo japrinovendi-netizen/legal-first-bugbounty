@@ -65,18 +65,68 @@ def _load_all_engagements():
     return results
 
 
+def _normalize_host(raw) -> str:
+    """Normalisasi input/entri scope menjadi hostname murni: lowercase, tanpa skema,
+    port, userinfo, slash, atau trailing dot. Mengembalikan '' bila tak ada host.
+
+    Contoh:
+      'https://App.Target.com:8443/x' -> 'app.target.com'
+      '127.0.0.1:8099'                -> '127.0.0.1'
+      'app.target.com.'               -> 'app.target.com'  (FQDN trailing-dot)
+    """
+    if raw is None:
+        return ""
+    s = str(raw).strip().lower().rstrip("/")
+    if not s:
+        return ""
+    try:
+        # Tambah '//' agar host:port tanpa skema pun terurai oleh urlparse
+        # (.hostname membuang port, userinfo, dan kurung IPv6).
+        host = urlparse(s if "://" in s else "//" + s).hostname or ""
+    except Exception:
+        host = ""
+    if not host:
+        # fallback konservatif bila urlparse gagal
+        host = s.split("/")[0].split("@")[-1].split(":")[0]
+    return host.rstrip(".")
+
+
 def _host_matches_scope(host: str, scope_list) -> bool:
-    """Cek apakah `host` cocok salah satu entri in_scope (menerima URL penuh atau bare host)."""
-    host = host.lower().strip()
-    for entry in scope_list or []:
-        entry = str(entry).strip()
-        # entry bisa berupa URL penuh atau bare hostname
-        if "://" in entry:
-            entry_host = urlparse(entry).netloc.lower()
+    """Cek apakah `host` cocok salah satu entri in_scope.
+
+    Aturan (fail-closed):
+      - Scope hanya menyempit KE BAWAH: sebuah entri mengotorisasi DIRINYA SENDIRI dan
+        SUB-DOMAIN di bawahnya, TAPI TIDAK PERNAH domain induk/apex di atasnya.
+      - Entri wildcard `*.example.com` mengotorisasi sub-domain saja (BUKAN apex
+        `example.com`).
+      - Pencocokan sufiks (sub-domain) HANYA berlaku untuk entri yang punya titik
+        (domain nyata). Entri label-tunggal tanpa titik — mis. `com` (TLD) atau
+        `*.com` — DITOLAK sebagai basis sub-domain (fail-OPEN); label-tunggal hanya
+        boleh EXACT match (mis. `localhost`). Ini menutup kebocoran "in_scope: ['com']
+        meloloskan seluruh .com".
+      - Input & entri dinormalisasi (skema/port/userinfo/trailing-dot dibuang).
+    """
+    host = _normalize_host(host)
+    if not host:
+        return False
+    for raw_entry in scope_list or []:
+        entry = str(raw_entry).strip().lower()
+        if not entry:
+            continue
+        wildcard = entry.startswith("*.")
+        base = _normalize_host(entry[2:] if wildcard else entry)
+        if not base:
+            continue
+        base_has_dot = "." in base
+        if wildcard:
+            # *.example.com -> hanya sub-domain; wajib base ber-titik (tolak *.com)
+            if base_has_dot and host.endswith("." + base):
+                return True
         else:
-            entry_host = entry.lower().rstrip("/")
-        if entry_host == host or host.endswith("." + entry_host) or entry_host.endswith("." + host):
-            return True
+            if host == base:
+                return True
+            if base_has_dot and host.endswith("." + base):
+                return True
     return False
 
 
@@ -93,9 +143,10 @@ def is_authorized(host: str):
 
     Return: (bool authorized, str reason)
     """
-    host = host.lower().strip()
-    if host.startswith("http://") or host.startswith("https://"):
-        host = urlparse(host).netloc.lower()
+    # Normalisasi penuh: buang skema, port, userinfo, trailing-dot. Tanpa ini,
+    # `check http://127.0.0.1:8099/` menghasilkan host '127.0.0.1:8099' yang TIDAK
+    # cocok entri '127.0.0.1' (false-negative; arah aman, tapi membingungkan operator).
+    host = _normalize_host(host)
 
     engagements = _load_all_engagements()
     if not engagements:
